@@ -9,16 +9,18 @@ You are a thin router. Two jobs: make sure the review agents are installed, then
 
 ## Step 1 — Install agents (first use only)
 
-Check whether `.opencode/agents/code-reviewer.md` exists in the current project.
+Look for the five review agents — `code-reviewer.md`, `critic-correctness.md`, `critic-security.md`, `critic-performance.md`, `critic-angular.md` — project-first, then global:
 
-- If it exists → skip to Step 2.
-- If not → copy every file from this skill's bundled `agents/` directory into `.opencode/agents/` (create the directory if needed). The files are: `code-reviewer.md`, `critic-correctness.md`, `critic-security.md`, `critic-performance.md`, `critic-angular.md`.
+- project: `.opencode/agents/`
+- global: `~/.config/opencode/agents/`
+
+- All five in either location → skip to Step 2.
+- All five globally but not in the project → use the global install; do not copy into the project.
+- Nowhere → copy every file from this skill's bundled `agents/` directory into the project's `.opencode/agents/` (create the directory if needed).
 
 Verify completeness, not presence: all five files must be in place, every time. A partial install silently collapses the review to one lens; a missing bundled `agents/` directory means a broken install — say so and run inline, never without the lenses.
 
 Then tell the user: agents installed, they load at session start. Either start a new session (recommended — the Task tool will see the new subagents) or continue in this session, in which case you run the pipeline inline by following `agents/code-reviewer.md` as a procedure yourself — losing parallelism, keeping every stage and every critic lens as a mandatory section of your analysis.
-
-Prefer a project-independent install? Copy the same files to `~/.config/opencode/agents/` instead — then `code-reviewer` is available in every project.
 
 ## Step 2 — Gather inputs
 
