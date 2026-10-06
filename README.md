@@ -9,7 +9,7 @@ Inspired by the pipeline patterns of [jordan-gibbs/hyperresearch](https://github
 **Route A — bootstrap skill (loads from this repo on demand):**
 
 ```
-npx skills add <your-user>/review-orchestrator
+npx skills add cainaican/review-orchestrator
 ```
 
 Then just ask in any opencode session: "ревью ветки X относительно Y". The skill installs the agents into `.opencode/agents/` on first use (restart the session so the Task tool sees them).
