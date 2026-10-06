@@ -20,8 +20,8 @@ Check:
 - Edge cases: empty states, null/undefined, error states, network failures, empty arrays/maps.
 - Off-by-one errors and boundary conditions.
 - Async race conditions, unhandled promise rejections, missing await.
-- The change does not break existing callers (regression risk) — check imports/callers with Grep before claiming this.
-- Tests: do they exist for the changed behavior? Is a missing test worth flagging?
+- The change does not break existing callers (regression risk) — check imports/callers with Grep before claiming this, and treat them as one coupling class only. Delivery-level changes — event targeting, hit-testing, CSS-driven behavior, timing — can reroute events and guards elsewhere with zero caller changes; enumerate what the diff re-routes or re-times, not just who calls it.
+- Tests: do they exist for the changed behavior — and for each existing interaction it intersects (victims list, if provided)? A user-facing interaction changed without a test is itself a finding: `minor` by default, `important` when visible to the user.
 - Error handling: swallowed errors, catch blocks that hide the cause.
 
 Output format — a JSON-like list, nothing else:

@@ -43,6 +43,8 @@ If you give neither a diff nor refs, the orchestrator asks which branches to com
 
 Anti-hallucination contract: critics may only report findings with a verbatim code excerpt; the orchestrator re-opens every blocker/important file itself and moves unverifiable findings to a "Dropped findings" appendix.
 
+Interaction-impact gate: the orchestrator classifies every changed mechanism by intervention class; delivery-level changes — anything altering event delivery or timing — get a mandatory **victims list** of the existing interactions they intersect, consumer side included. Critics answer "what does this diff BREAK?" explicitly, and the report's "Interaction impact" section forbids unverified negatives. Public-API diffing alone does not cover delivery-level coupling: "no callers changed" is not evidence that behavior survived.
+
 ## Repo layout
 
 ```

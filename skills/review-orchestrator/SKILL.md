@@ -14,7 +14,9 @@ Check whether `.opencode/agents/code-reviewer.md` exists in the current project.
 - If it exists → skip to Step 2.
 - If not → copy every file from this skill's bundled `agents/` directory into `.opencode/agents/` (create the directory if needed). The files are: `code-reviewer.md`, `critic-correctness.md`, `critic-security.md`, `critic-performance.md`, `critic-angular.md`.
 
-Then tell the user: agents installed, they load at session start. Either start a new session (recommended — the Task tool will see the new subagents) or continue in this session, in which case you run the pipeline inline by following `agents/code-reviewer.md` as a procedure yourself (losing parallelism, keeping the stages).
+Verify completeness, not presence: all five files must be in place, every time. A partial install silently collapses the review to one lens; a missing bundled `agents/` directory means a broken install — say so and run inline, never without the lenses.
+
+Then tell the user: agents installed, they load at session start. Either start a new session (recommended — the Task tool will see the new subagents) or continue in this session, in which case you run the pipeline inline by following `agents/code-reviewer.md` as a procedure yourself — losing parallelism, keeping every stage and every critic lens as a mandatory section of your analysis.
 
 Prefer a project-independent install? Copy the same files to `~/.config/opencode/agents/` instead — then `code-reviewer` is available in every project.
 

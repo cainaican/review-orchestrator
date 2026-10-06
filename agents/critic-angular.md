@@ -33,6 +33,10 @@ Library-specific (public API contract):
 - Template type checking: strict template checks safe under `strictTemplates`.
 - `@angular-eslint` conventions: selector prefixes, directive/component/class suffixes, `banana-in-box`, `no-conflicting-lifecycle`.
 
+DOM interaction contracts (Angular libraries):
+- Component CSS and listeners that alter event delivery (hit-testing, stacking, visibility, toggled classes, host/document listeners): enumerate which existing interactions the change re-routes or intercepts, and whether raw listeners discriminate by target.
+- Consumer-provided components (config-injected, projected): their DOM handlers and guards depend on the library's DOM behavior and event targeting — verify them before declaring an interaction safe.
+
 Templates:
 - Function calls in template expressions (re-run every CD), missing `track` in `@for`, untyped template context, `innerHTML` usage.
 

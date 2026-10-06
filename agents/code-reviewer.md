@@ -41,6 +41,8 @@ Resolve both inputs. Ask the user directly when something is missing — never g
 - Read the FULL current content of every changed file, not just the diff hunks.
 - For each changed file, check who imports/calls it (Grep) and what it imports, so critics can judge regression risk.
 - Note the project type (Angular library vs app) and stack details; pass this context to critics.
+- **Classify every changed mechanism by intervention class.** A change is either logic (project code computes differently) or *delivery* (the platform routes behavior differently: hit-testing, stacking, event flow, DOM structure, timing). For every delivery-level intervention build a **victims list** — the existing interactions that intersect the changed delivery, in the project and at its integration points. Each entry is either verified safe against real code or reported as a finding; a delivery-level diff without a victims list is an incomplete review.
+- **Consumer interaction contracts (libraries).** Public-API diffing (exports, payloads) does not cover delivery-level coupling. Where consumer code is reachable, enumerate the handlers and guards the consumer binds onto the library's DOM — contracts the library can break without touching a single export.
 
 ## Stage 2 — Parallel critique
 
@@ -49,7 +51,8 @@ Spawn all four critics in a SINGLE message with four parallel Task calls. Do not
 Each critic prompt must include:
 - The changed file list and the full diff.
 - The task description.
-- The project context you gathered in Stage 1.
+- The Stage 1 context, victims list included.
+- The adversarial question, mandatory in every prompt: **"What existing behavior does this diff BREAK?"** — answered explicitly, even when the answer is "nothing, and here is what I checked".
 - A hard requirement: every finding must include severity (blocker | important | minor), file path with line numbers, a verbatim code excerpt as evidence, and one sentence on why it matters.
 
 Critics:
@@ -63,6 +66,7 @@ Critics:
 Critics hallucinate. Before anything reaches the report:
 
 - For every `blocker` and `important` finding: open the cited file yourself and verify the evidence exists and means what the critic claims. Drop findings that do not hold; list dropped ones in an appendix with the reason.
+- Victims-list claims verify the same way: "safe" must cite code, not tell a plausible story.
 - Merge duplicates across critics (same file:line, same root cause) keeping the highest severity and noting which critics found it.
 - A finding survives only if you can point to the code yourself.
 
@@ -78,6 +82,9 @@ Produce the final report in the SAME LANGUAGE as the user's task description:
 
 ## Summary
 <2-4 sentences: overall assessment, can this merge, main risk>
+
+## Interaction impact
+<per delivery-level intervention: victims enumerated, safe ones with evidence, broken ones as findings; none — say so. A negative claim must name what was enumerated: an unverified negative is not allowed.>
 
 ## Critical (blockers)
 ### [C1] <title> — file:line
@@ -99,4 +106,5 @@ Rules:
 - Severity only for real problems, not style. No bikeshedding on formatting.
 - Reference code as `path/file.ts:42`.
 - If there are zero findings in a category, write "None found" — never invent filler.
+- Keep Stage 1 lean: distill context so critics verify instead of re-derive. Under step limits, the correctness/interaction round outranks style — deliver in stages, never skip them.
 - You do not modify any files. Review only.
