@@ -69,9 +69,9 @@ For each surviving blocker: read 2–3 files related via imports/calls; if any s
 
 ## Stage 4 — Report
 
-In the SAME LANGUAGE as the user's task description:
+In the SAME LANGUAGE as the user's task description (outer fence uses 4 backticks so the inner YAML fence nests cleanly):
 
-```
+````
 # Code Review — <date, scope>
 
 ## Scope
@@ -104,6 +104,51 @@ In the SAME LANGUAGE as the user's task description:
 
 ## Dropped findings
 <critic claims that failed 3a, with reason>
+
+## Review log (abstract — for analytics)
+
+```yaml
+id: <YYYY-MM-DD_HHMM_base..head>              # slashes in refs → '-'; e.g. 2026-10-14_1430_main..feature-oauth
+date: <YYYY-MM-DD>
+refs: <base>...<head>                         # or "pasted diff" when no refs
+task_summary: <one-line, user's own words, no code>
+
+input_profile:
+  files_changed: <N>
+  diff_lines_added: <N>
+  diff_lines_removed: <N>
+  by_type: { ts: <N>, html: <N>, scss: <N>, spec: <N>, other: <N> }
+  by_role: { component: <N>, service: <N>, template: <N>, spec: <N>, config: <N>, public_api: <N> }
+  public_api_changes: { added: <N>, modified: <N>, removed: <N> }
+  intervention_classes: { logic: <N>, delivery: <N> }   # from Stage 1
+  victims_list_size: <N>                                # 0 if no delivery-level change
+
+findings_profile:
+  severity: { blocker: <N>, important: <N>, minor: <N> }
+  by_critic:
+    critic-correctness: { raised: <N>, dropped_3a: <N>, survived: <N> }
+    critic-security:    { raised: <N>, dropped_3a: <N>, survived: <N> }
+    critic-performance: { raised: <N>, dropped_3a: <N>, survived: <N> }
+    critic-angular:     { raised: <N>, dropped_3a: <N>, survived: <N> }
+    critic-tests:       { raised: <N>, dropped_3a: <N>, survived: <N> }
+  orchestrator:
+    mental_trace_findings: <N>                 # Stage 2.5
+    sweep_findings: <N>                        # Stage 3b
+    deep_dive_invocations: <N>                 # Stage 3.5
+  titles:                                      # ABSTRACT titles — no code, no proprietary identifiers
+    - { id: C1, critic: angular,     title: "<what was found, no excerpt>" }
+    - { id: I1, critic: correctness, title: "..." }
+
+human_feedback:
+  useful_ids: []            # ids from the sections above the user agrees with
+  false_positive_ids: []    # ids the user considers wrong/noise
+  missed: ""                # free text — what the review did not catch
+  overall: ""               # free text — overall impression
 ```
+````
+
+Tallying rules: `raised` = findings each critic initially returned; `dropped_3a` = those you dropped in 3a; `survived` = `raised - dropped_3a`; add `[sweep]`-prefixed findings into the right critic's `survived` AND into `orchestrator.sweep_findings`; `[mental-trace]` findings go only into `orchestrator.mental_trace_findings` (not a critic). Titles must describe the FINDING, not quote code — "Breaking public API change in <symbol-name-only>" is OK, "`export class Foo { ... }`" is not.
+
+After producing the full report, add this closing line verbatim: **"Сохранить лог для аналитики? Путь по умолчанию: `~/.config/opencode/review-logs/<id>.yaml`. Ответьте `y` для дефолта, укажите свой путь, или `n` чтобы пропустить."** Your write permission is `deny` — the parent (skill or main session) handles the save.
 
 Rules: severity for real problems only, no style bikeshedding; cite as `path/file.ts:42`; empty category → "None found" (no filler); keep mental-trace reasoning visible for calculational findings; under step limits, correctness/interaction outranks style — deliver in stages, never skip them; you do not modify files.

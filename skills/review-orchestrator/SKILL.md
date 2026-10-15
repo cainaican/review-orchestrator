@@ -34,3 +34,13 @@ Two refs → `git diff --merge-base <base> <head>` (fallback `git diff <base>...
 ## Step 3 — Hand off
 
 Invoke `code-reviewer` via Task with: the full diff, the task description verbatim, the two refs (if any). Deliver its report to the user unchanged in structure, in the user's language.
+
+## Step 4 — Persist the review log
+
+The report ends with a `## Review log (abstract — for analytics)` YAML block and a save-confirmation question. After the user answers:
+
+- `n` → do nothing.
+- `y` → write the YAML block (the fenced content under `## Review log`) to `~/.config/opencode/review-logs/<id>.yaml`, using the `id:` field from the YAML as filename. Create `~/.config/opencode/review-logs/` if missing. Tell the user the full path.
+- any other string → treat as a user-provided path. If it ends with `/` or is a directory, append `<id>.yaml`; otherwise use it verbatim. Create parent dirs if missing. Tell the user the full path.
+
+Write only the YAML content (strip the markdown fence); the file is a pure YAML document the user will later open and edit the `human_feedback:` block in.
