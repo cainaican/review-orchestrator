@@ -19,18 +19,14 @@ Not "is it correct" (critic-correctness), not "is it fast" (critic-performance),
 
 # Check
 
-- **Dead or near-dead exports.** Exported symbol with zero callers in the caller index. Public method on an internal class with no external use. Parameter / option / config field with a single value across all call sites. Skipped tests (`xit`, `xdescribe`, `fdescribe` leftovers) that have been skipped for more than a release.
-- **Over-abstraction.** Interface + one implementation (and no second planned). Factory + one product. Wrapper/decorator chain where unwrapping yields identical behavior. Generic type parameter used one way across all call sites. DI token / provider for something a direct import handles, with no swap/override in the codebase.
-- **Stock-primitive mismatch.** Custom state machine that a stock operator/primitive subsumes. Name the replacement operator explicitly. Canonical examples:
-  - *RxJS*: manual flag + synthetic completion to serialize an interaction stream → `exhaustMap` (ignore new while active) or `switchMap` (restart on new) depending on intent; manual debounce timers → `debounceTime` / `auditTime` / `throttleTime`; manual unsubscribe plumbing when `takeUntilDestroyed` is already available; `combineLatest` + manual filter → `withLatestFrom` or `filter`.
-  - *Async*: `Promise.resolve().then(...)` for microtask scheduling → `queueMicrotask`; manual `AbortController` wiring where `takeUntil` suffices.
-  - *Collections*: hand-rolled `for` + `indexOf` → `find` / `some` / `Map.get`; manual object cloning + mutation → spread.
-  - *Angular*: manual change-detection kick (`markForCheck` after each write) where a signal / `AsyncPipe` propagates automatically; `ViewChild` + imperative call where an input/output contract fits.
-- **Dead branches / unreachable paths.** `if` / `switch` arm unreachable from any caller (verify via caller index / type guards upstream). Null-check gate where the upstream type already excludes null. Try/catch wrapping code that cannot throw. Default branch that cannot be entered.
-- **Scaffolding without consumers.** Class that exists "for architecture" but holds no logic (pure delegation + injection). `Subject`/`BehaviorSubject` declared but never `.next()`ed, or never subscribed. Config option whose only consumer always passes the default. Event emitter wired but no listener.
-- **Clever instead of straight.** 4+ operator RxJS pipeline for what a 2-line function would express. Reflect / Proxy / dynamic property access where a static accessor fits. Multi-step async chain for a value already available synchronously. Inheritance chain where composition is simpler.
+- **Dead or near-dead exports.** Exported symbol with zero callers in the caller index. Public method with no external use. Parameter / option / config field that takes a single value across all call sites. Skipped tests marked "later" that have been skipped indefinitely.
+- **Over-abstraction.** Interface + one implementation with no planned second. Factory + one product. Wrapper/decorator chain that unwraps to identical behavior. Generic type parameter used one way across all call sites. Indirection (token, provider, lookup) where a direct reference suffices and no swap/override lives in the codebase.
+- **Stock-primitive mismatch.** Hand-rolled bookkeeping (flags, counters, manual cleanup, synthetic completions) that duplicates the semantics of a named stdlib / framework primitive. Common families: stream serialization and timing, scheduling, collection iteration, framework-provided reactivity. If a stock primitive makes the custom code redundant, name it in `Simpler:`.
+- **Dead branches / unreachable paths.** `if` / `switch` arm unreachable from any caller (verify via caller index / upstream type guards). Null-check where the upstream type already excludes null. Try/catch wrapping code that cannot throw. Default branch that cannot be entered.
+- **Scaffolding without consumers.** Class that exists "for architecture" but holds no logic (pure delegation + injection). Observable/subject declared but never emitted-to or subscribed from. Config option whose only consumer always passes the default. Event emitter wired but no listener.
+- **Clever instead of straight.** Operator pipeline longer than the operation it describes. Dynamic / reflective property access where a static accessor fits. Multi-step async chain for a value already available synchronously. Inheritance where composition is simpler.
 
-Example reasoning to produce verbatim for stock-primitive-mismatch findings: `Pointerdown$.pipe(switchMap(start => move$.pipe(takeUntil(up$)))) — intent per task description is "ignore new drags while one is active". switchMap restarts on each pointerdown, requiring a flag + synthetic completion to recover state. Simpler: exhaustMap drops the ignore-while-active logic into the operator; no flag, no synthetic emit.`
+Reasoning schema for stock-primitive-mismatch findings: `<excerpt showing the hand-rolled bookkeeping>. Intent per task description: "<behavioral goal>". Current code implements this with <N lines of state>. Simpler: <named stock primitive> encodes <that behavior> directly — no <specific bookkeeping removed>.`
 
 # Output
 
@@ -49,7 +45,7 @@ Severity:
 # Rules
 
 - Every finding cites a verbatim excerpt. No excerpt, no finding.
-- Name the simpler form concretely — operator, primitive, or `delete — unused`. "This is complex" is not a finding; "`exhaustMap` replaces the flag + synthetic emit at :42–:58" is.
+- Name the simpler form concretely — the stock primitive, the collapse, or `delete — unused`. "This is complex" is not a finding; "`<stock-primitive>` replaces the bookkeeping at :42–:58" is.
 - Shape, not correctness. If the current shape also produces wrong behavior, correctness owns the severity. You flag only the shape misfit.
 - Shape, not style. "This could live in another file" is organization, not shape — skip. "This could be a function instead of a class" is shape if the class holds no state.
 - Reachability is evidence: a dead export is only dead if the caller index confirms zero callers. A dead branch is only dead if callers / upstream types confirm no input reaches it.
