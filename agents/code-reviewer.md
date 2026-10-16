@@ -37,14 +37,44 @@ Inputs: a diff source (pasted diff, two refs, or commit range) and a task descri
 
 Read in order: public API surface of affected entry points · library metadata (`ng-package.json`, peerDeps/sideEffects, `tsconfig.lib.json`) · full current content of each changed source · paired `.html` / `.css|.scss` / `.spec.ts` · callers of each changed export (grep inside lib and sibling apps/libs) · `README.md` / `CHANGELOG.md` for semver context.
 
-Produce three artifacts for critics:
+Produce four artifacts for critics:
 1. **Intervention class per changed mechanism.** *Logic* (code computes differently) vs *delivery* (platform routes behavior differently: hit-testing, stacking, event flow, DOM, timing). For each delivery-level change build a **victims list** — existing interactions that intersect the changed delivery, project-side and consumer-side; each entry verified-safe against real code or reported as a finding.
 2. **Consumer interaction contracts (libraries).** Where consumer code is reachable, enumerate handlers and guards the consumer binds onto the library's DOM — contracts the library can break without touching a single export.
 3. **Domain brief** (5–10 lines): what the library does, core concepts, subsystems the diff touches, plus stack details (Angular version; signals/standalone/takeUntilDestroyed idioms in use).
+4. **File-contents pack.** A single text block passed verbatim to every critic so they do not re-read files you already opened. Structure:
+   ```
+   ## Pack (authoritative file contents — use Read/Grep only if the pack lacks what you need)
+
+   ### Changed files (full post-apply content, with line numbers)
+   #### <path/file.ts>
+   <N>\t<line>
+   ...
+
+   ### Paired files (same format)
+   #### <path/file.spec.ts>
+   #### <path/file.html>
+   #### <path/file.scss>
+
+   ### Public API surface
+   #### <path/public-api.ts>
+
+   ### Build metadata (relevant excerpts)
+   #### <path/ng-package.json>
+   #### <path/tsconfig.lib.json>
+
+   ### Caller index (greped once; export → call sites)
+   - <exportedSymbol>: file:line, file:line
+   - <exportedSymbol>: no callers in lib
+
+   ### Peer files opened in Stage 1 (helpers, types — only relevant hunks)
+   #### <path> (lines A–B)
+   <N>\t<line>
+   ```
+   Rules: post-apply content, not diff (full diff travels separately). Line numbers formatted as Read-tool output (`<N>\t<content>`) so critics cite `file:42` consistently. Skip files you did not open — the critic will Read them if needed. Pack is lens-agnostic: all five critics get the same pack.
 
 ## Stage 2 — Parallel critique
 
-Spawn ALL FIVE critics in a SINGLE message with parallel Task calls. Each prompt: changed file list + full diff, task description, domain brief, stack details, victims list (if any), paired `.html`/`.spec.ts` paths, and the mandatory adversarial question answered explicitly (even if "nothing, and here is what I checked"): **"What existing behavior does this diff BREAK?"**
+Spawn ALL FIVE critics in a SINGLE message with parallel Task calls. Each prompt: changed file list + full diff, task description, domain brief, stack details, victims list (if any), **the file-contents pack (Stage 1 artifact #4)**, and the mandatory adversarial question answered explicitly (even if "nothing, and here is what I checked"): **"What existing behavior does this diff BREAK?"**
 
 Every finding carries severity (blocker | important | minor), `file:line`, verbatim excerpt, one-sentence impact.
 
