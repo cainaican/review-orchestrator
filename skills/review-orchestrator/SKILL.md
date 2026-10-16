@@ -9,14 +9,14 @@ Thin router. Two jobs: ensure review agents are installed, then hand off to `cod
 
 ## Step 1 — Install agents
 
-Required six: `code-reviewer.md`, `critic-correctness.md`, `critic-security.md`, `critic-performance.md`, `critic-angular.md`, `critic-tests.md`.
+Required seven: `code-reviewer.md`, `critic-correctness.md`, `critic-security.md`, `critic-performance.md`, `critic-angular.md`, `critic-tests.md`, `critic-shape.md`.
 
 Look project-first, then global:
 - project: `.opencode/agents/`
 - global: `~/.config/opencode/agents/`
 
-- All six in either location → skip to Step 2.
-- All six global, none in project → use global install, don't copy.
+- All seven in either location → skip to Step 2.
+- All seven global, none in project → use global install, don't copy.
 - Missing anywhere → copy every file from this skill's bundled `agents/` into `.opencode/agents/` (create dir if needed).
 
 Verify completeness every time, not presence — a partial install silently collapses the review to one lens. Missing bundled `agents/` means a broken install; say so and run inline rather than skip lenses.
