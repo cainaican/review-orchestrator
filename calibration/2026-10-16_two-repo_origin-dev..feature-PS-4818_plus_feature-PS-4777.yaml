@@ -1,0 +1,50 @@
+id: 2026-10-16_two-repo_origin-dev..feature-PS-4818_plus_feature-PS-4777
+date: 2026-10-16
+refs: origin/dev...feature/PS-4818 (scp-gantt-new) + origin/dev...feature/PS-4777 (scp-front-2)
+task_summary: скрыть дубли и полностью перекрытые задачи в свёрнутых строках; раскрытие показывает всё; рамка захватывает скрытых; drag временно открывает скрытые и гарантированно чистит временные полосы
+
+input_profile:
+  files_changed: 31
+  diff_lines_added: 3459
+  diff_lines_removed: 463
+  by_type: { ts: 16, html: 2, scss: 1, spec: 12 }
+  by_role: { component: 5, service: 4, directive: 1, class_data: 3, template: 2, spec: 12, style: 1, public_api: 2, config: 0 }
+  public_api_changes: { added: 2, modified: 1, removed: 0 }
+  intervention_classes: { logic: 7, delivery: 7 }
+  victims_list_size: 10
+
+findings_profile:
+  severity: { blocker: 1, important: 4, minor: 10 }
+  by_critic:
+    critic-correctness: { raised: 6, dropped_3a: 0, survived: 6 }
+    critic-security:    { raised: 2, dropped_3a: 0, survived: 2 }
+    critic-performance: { raised: 10, dropped_3a: 5, survived: 5 }
+    critic-angular:     { raised: 6, dropped_3a: 5, survived: 1 }
+    critic-tests:       { raised: 8, dropped_3a: 1, survived: 7 }
+    critic-shape:       { raised: 10, dropped_3a: 1, survived: 9 }
+  orchestrator:
+    mental_trace_findings: 1
+    sweep_findings: 0
+    deep_dive_invocations: 0
+  titles:
+    - { id: C1, critic: correctness, title: "drag pipeline permanently killed by pre-threshold pointercancel/fast-tap (missed escape, unhandled capture error, exhaust instead of self-healing switch)" }
+    - { id: I1, critic: correctness, title: "coverage hiding misses bars fully contained in a single longer bar (greedy shortest-first)" }
+    - { id: I2, critic: performance, title: "search highlight rebuilds bar views three times per search including a no-op pulse at +5s (no content dedup)" }
+    - { id: I3, critic: shape,       title: "library version not bumped despite added public API" }
+    - { id: I4, critic: tests,       title: "consumer event-seam tests missing (frame-selection wiring, selection attribute lifecycle)" }
+    - { id: M1, critic: correctness, title: "dedup grouping crashes on null-dated bars via expand/frame paths" }
+    - { id: M2, critic: correctness, title: "manual-render change mid-gesture destroys temporary views without re-promotion" }
+    - { id: M3, critic: correctness, title: "pointer cancel now commits the move instead of reverting" }
+    - { id: M4, critic: correctness, title: "frame-selection diff desyncs on external selection changes during gesture" }
+    - { id: M5, critic: security,    title: "composite string key collisions via unescaped separator" }
+    - { id: M6, critic: shape,       title: "dead public API added (unused method and unused type export)" }
+    - { id: M7, critic: shape,       title: "rendered-bar set derived three times per gesture (drift risk, allocation churn)" }
+    - { id: M8, critic: shape,       title: "shape debt on map-inheriting view store (acknowledged TODO, identity scan, test-only knob)" }
+    - { id: M9, critic: performance, title: "out-of-zone class signal relies on hybrid scheduler for host binding refresh" }
+    - { id: M10, critic: tests,      title: "test gap bundle (exhaust release, pending-rAF vs new gesture, row-level expansion, coalescing assertions)" }
+
+human_feedback:
+  useful_ids: []
+  false_positive_ids: []
+  missed: ""
+  overall: ""
