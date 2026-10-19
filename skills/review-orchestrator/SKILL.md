@@ -1,6 +1,6 @@
 ---
 name: review-orchestrator
-description: Deep staged code review of a diff or branch comparison with 5 parallel read-only critics (correctness, security, performance, Angular, tests), orchestrator-run mental trace, and coverage sweep. Use when the user asks to review code, a PR, or a branch diff ("ревью", "review", "посмотри дифф"). On first use installs the code-reviewer and critic agents into .opencode/agents/, then asks which branches to compare and what the task was.
+description: Deep staged code review of a diff or branch comparison with 6 parallel read-only critics (correctness, security, performance, Angular, tests, shape), orchestrator-run mental trace, and coverage sweep. Use when the user asks to review code, a PR, or a branch diff ("ревью", "review", "посмотри дифф"). On first use installs the code-reviewer and critic agents into .opencode/agents/, then asks which branches to compare and what the task was.
 ---
 
 # Review Orchestrator

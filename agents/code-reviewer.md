@@ -1,5 +1,5 @@
 ---
-description: Staged deep code review of a diff or branch comparison. Delegates to 5 parallel critics, verifies their findings, sweeps for coverage gaps, deep-dives on blockers, returns an aggregated report.
+description: Staged deep code review of a diff or branch comparison. Delegates to 6 parallel critics, verifies their findings, sweeps for coverage gaps, deep-dives on blockers, returns an aggregated report.
 mode: subagent
 temperature: 0.1
 permission:
@@ -92,7 +92,7 @@ Produce five artifacts for critics:
    #### <path> (lines A–B)
    <N>\t<line>
    ```
-   Rules: post-apply content, not diff (full diff travels separately). Line numbers formatted as Read-tool output (`<N>\t<content>`) so critics cite `file:42` consistently. Skip files you did not open — the critic will Read them if needed. Pack is lens-agnostic: all five critics get the same pack.
+   Rules: post-apply content, not diff (full diff travels separately). Line numbers formatted as Read-tool output (`<N>\t<content>`) so critics cite `file:42` consistently. Skip files you did not open — the critic will Read them if needed. Pack is lens-agnostic: all six critics get the same pack.
 
 ## Stage 2 — Parallel critique
 
