@@ -25,15 +25,27 @@ After install, tell the user: agents installed, loaded at session start. Recomme
 
 ## Step 2 — Gather inputs
 
-Ask directly if either is missing:
-1. **Diff source** — pasted diff, or two refs. Ask: "Какие ветки сравнить (base...head), или вставьте дифф?"
-2. **Task description** — what the change was supposed to do. Ask: "Какая была постановка задачи?"
+Ask sequentially; first two are mandatory, last two optional (Enter to skip):
 
-Two refs → `git diff --merge-base <base> <head>` (fallback `git diff <base>...<head>`).
+1. **Diff source** (required) — "Какие ветки сравнить (base...head), или вставьте дифф?"
+2. **Task summary** (required, one line) — "Какая была постановка задачи (одна строка)?"
+3. **Acceptance criteria / полная постановка** (optional, multi-line) — "Полная постановка / acceptance criteria? Вставьте текст или Enter чтобы пропустить."
+4. **External references** (optional, URLs) — "Ссылки на задачу/спеку/дизайн-док (по одной на строку)? Enter чтобы пропустить."
+
+Two refs for #1 → `git diff --merge-base <base> <head>` (fallback `git diff <base>...<head>`).
+
+For each URL in #4, attempt fetch by hostname convention:
+- `*.atlassian.net` → `mcp__jira__*`
+- `linear.app` → `mcp__linear__*`
+- `github.com/*/issues/*` or `*/pull/*` → `mcp__github__*`
+- `*.notion.so` / `notion.site` → `mcp__notion__*`
+- Unknown host / tool undefined / error / empty → ask: "Не могу достать <URL> через MCP. Вставьте содержимое или Enter чтобы пропустить."
+
+Record per-ref provenance `mcp | paste | skipped`. Pass all four fields + provenance list to `code-reviewer`.
 
 ## Step 3 — Hand off
 
-Invoke `code-reviewer` via Task with: the full diff, the task description verbatim, the two refs (if any). Deliver its report to the user unchanged in structure, in the user's language.
+Invoke `code-reviewer` via Task with: the full diff, the task summary verbatim, the two refs (if any), the acceptance criteria block (verbatim or `— not provided`), and the external refs list with per-ref provenance (`[{url, source: mcp|paste|skipped, content}]`). Deliver its report to the user unchanged in structure, in the user's language.
 
 ## Step 4 — Persist the review log
 
