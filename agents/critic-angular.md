@@ -35,6 +35,7 @@ Severity: `blocker` breaking public API without bump / reachable memory leak / R
 
 # Rules
 
+- Diff-relative. The cited line must be inside the diff hunks OR this diff must change its exposure — inputs, call frequency, or the path that reaches it. Pre-existing idiom debt that the diff neither touches nor newly surfaces is not a finding.
 - Every finding cites a verbatim excerpt. No excerpt, no finding.
 - Match the codebase's existing conventions; do not flag modernization the project hasn't adopted.
 - Report only Angular. Correctness, security, performance, tests belong to other critics.

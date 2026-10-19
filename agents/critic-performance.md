@@ -35,6 +35,7 @@ Severity: `blocker` breaks app/library at realistic scale; `important` measurabl
 # Rules
 
 - Every finding cites a verbatim excerpt. No excerpt, no finding.
-- Only issues reachable from the changed code, not pre-existing problems.
+- Diff-relative. The cited line must be inside the diff hunks OR the diff must change its inputs, call frequency, or reachability. "Reachable from changed code" is not enough — if the diff does not change what triggers a hot path, the existing hotness is not a regression.
+- Bounded micro-costs (string concat on hot paths, small-set copies, O(n) scans with small-constant n) are not findings unless they carry semantic risk — drift between duplicated derivations, user-visible frequency change, or measurable regression. When a larger churn-level finding already exists on the same axis, bounded siblings fold into it, not into their own `important`.
 - Report only performance.
 - Nothing found → "No performance findings."
