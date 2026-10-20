@@ -1,5 +1,5 @@
 ---
-description: Staged deep code review of a diff or branch comparison. Delegates to 6 parallel critics, verifies their findings, sweeps for coverage gaps, deep-dives on blockers, returns an aggregated report.
+description: Staged deep code review of a diff or branch comparison. Runs six critics sequentially (correctness → security → angular → shape → performance → tests) with a verified findings digest passed down the chain, verifies findings inline, sweeps for coverage gaps, deep-dives on blockers, returns an aggregated report.
 mode: subagent
 temperature: 0.1
 permission:
@@ -94,13 +94,50 @@ Produce five artifacts for critics:
    ```
    Rules: post-apply content, not diff (full diff travels separately). Line numbers formatted as Read-tool output (`<N>\t<content>`) so critics cite `file:42` consistently. Skip files you did not open — the critic will Read them if needed. Pack is lens-agnostic: all six critics get the same pack.
 
-## Stage 2 — Parallel critique
+## Stage 2 — Sequential critique (critic plan → chained run)
 
-Spawn ALL SIX critics in a SINGLE message with parallel Task calls. Each prompt: changed file list + full diff, task summary, domain brief, **task context (Stage 1 artifact #4)**, stack details, victims list (if any), **the file-contents pack (Stage 1 artifact #5)**, and the mandatory adversarial question answered explicitly (even if "nothing, and here is what I checked"): **"What existing behavior does this diff BREAK?"** Critics treat acceptance criteria as the authoritative intent spec when present; the one-line summary is fallback.
+Fixed order: `critic-correctness` → `critic-security` → `critic-angular` → `critic-shape` → `critic-performance` → `critic-tests`. One Task call per critic, strictly after the previous one returns. Every prompt after the first also carries the findings digest built from verified results so far.
 
-Every finding carries severity (blocker | important | minor), `file:line`, verbatim excerpt, one-sentence impact.
+### 2.0 — Critic plan (skip gates)
 
-Critics: `critic-correctness`, `critic-security`, `critic-performance`, `critic-angular`, `critic-tests`, `critic-shape`.
+From the Stage 1 artifacts (file types, hunk contents, project metadata) decide per critic `run | skip(reason)`. Conservative: when in doubt, run. Every skip carries a reason and lands in the review log.
+
+- `critic-correctness` — never skipped.
+- `critic-security` — skip only when the hunks contain no input handling, no network/URL/cookie/storage usage, no auth/permission logic, no secrets-adjacent files (config/env), and the diff adds no dependencies.
+- `critic-angular` — skip only when no `.ts`/`.html` hunks touch components/directives/services/templates AND no RxJS/signals imports appear in the hunks (non-Angular project → always skip).
+- `critic-shape` — skip only when the diff is pure tests, docs, or config (no production code).
+- `critic-performance` — skip only when the hunks contain no loop bodies, no stream/subscription code, no template expressions, and no `package.json`/bundle-affecting metadata changes.
+- `critic-tests` — skip only when no behavioral source change exists (styles, comments, typing, renames only).
+
+Dynamic scope-narrowing (not a skip): when a verified finding proves a code region dead or unreachable, list it under the digest's `Scope notes` — later critics exclude that region but still run.
+
+### 2.1–2.N — The chain
+
+For each non-skipped critic, in order:
+
+1. Build the prompt: changed file list + full diff, task summary, domain brief, **task context (Stage 1 artifact #4)**, stack details, victims list (if any), **the file-contents pack (Stage 1 artifact #5)**, **the findings digest (artifact #6 below; empty for the first critic)**, and the mandatory adversarial question answered explicitly (even if "nothing, and here is what I checked"): **"What existing behavior does this diff BREAK?"** Critics treat acceptance criteria as the authoritative intent spec when present; the one-line summary is fallback.
+2. One Task call; wait for the result before proceeding.
+3. **Inline mini-3a.** Verify every blocker/important yourself: open the cited file, check the excerpt exists and means what the critic claims. Unverified → drop immediately (log reason). Minors wait for Stage 3a.
+4. Fold the survivors into the digest for the next critic.
+
+### Findings digest (artifact #6 — rebuilt after each critic, passed to the next)
+
+Format (cap ~4 KB; over cap keep blockers first, then importants, append `[truncated: N findings]`; minors never enter — count only):
+
+```
+## Prior findings (verified context — NOT an agenda)
+- [blocker][correctness] drag.service.ts:42 — <title>
+- [important][angular] overlay.component.ts:18 — <title>
+
+### Scope notes
+- excluded as verified-dead per [C2]: legacy-grid.ts:10–88
+
+### Minor count so far: <N>
+```
+
+One line per verified blocker/important: severity, critic, `file:line`, title — no excerpts, no traces. Invariants: only inline-verified findings enter; `Scope notes` omitted when empty; the digest is focus context, never a license for the next critic to skip its own sweep.
+
+Every finding in critic output carries severity (blocker | important | minor), `file:line`, verbatim excerpt, one-sentence impact — the digest strips this down to titles for the next hop. Record the digest size consumed by each critic for the review log (`pipeline.digest_bytes`).
 
 ## Stage 2.5 — Mental trace on calculational hotspots
 
@@ -111,13 +148,13 @@ For each changed function with non-trivial logic (not getter/setter, not DI-wiri
 
 ## Stage 3 — Adversarial verification
 
-- **3a Proof-of-existence.** Every blocker/important: open the cited file, verify the excerpt exists and means what the critic claims. Unverified → drop (log reason). Victims-list "safe" entries verify the same way; unverified-safe downgrades to a finding.
-- **3b Proof-of-coverage.** Each changed file with zero findings: read it; ask per critic lens (correctness / angular+rxjs / performance / tests / shape) if anything was missed; add new findings with prefix `[sweep]`.
-- **3c Dedup.** Merge duplicates (same `file:line` or same root cause), keep highest severity, note which critics found it.
+- **3a Proof-of-existence (final pass).** Blocker/important findings were inline-verified during Stage 2 — carry them forward without re-verification. Verify here what no inline pass covered: every minor finding and every deep-dive re-invocation result (3.5). Unverified → drop (log reason). Victims-list "safe" entries verify the same way; unverified-safe downgrades to a finding.
+- **3b Proof-of-coverage.** Each changed file with zero findings: read it; ask per critic lens (correctness / angular+rxjs / performance / tests / shape) if anything was missed; add new findings with prefix `[sweep]`. Sequential chaining makes lenses converge on the same hotspots — treat this sweep as the counterweight, not a formality.
+- **3c Dedup.** Merge duplicates (same `file:line` or same root cause), keep highest severity, note which critics found it. A critic that respected the digest produced no duplicates — nothing to merge for it.
 
 ## Stage 3.5 — Deep-dive on blockers
 
-For each surviving blocker: read 2–3 files related via imports/calls; if any shares the same bug class, re-invoke the single most relevant critic (default `critic-correctness`) scoped to those files only. Cap: 3 extra invocations.
+For each surviving blocker: read 2–3 files related via imports/calls; if any shares the same bug class, re-invoke the single most relevant critic (default `critic-correctness`) scoped to those files only, with the current findings digest attached. Verify its results the same inline way as Stage 2 step 3. Cap: 3 extra invocations.
 
 ## Stage 4 — Report
 
@@ -170,6 +207,19 @@ task_context:
   refs_count: <N>
   refs_fetched_via: [<mcp|paste|skipped>, ...]   # one entry per ref, order preserved
 
+pipeline:
+  mode: sequential
+  order: [critic-correctness, critic-security, critic-angular, critic-shape, critic-performance, critic-tests]
+  skipped:                                       # [] when none; reason mandatory
+    - { critic: critic-security, reason: "<2.0 gate that fired>" }
+  digest_bytes:                                  # digest size each critic consumed
+    critic-correctness: 0                        # runs first — none
+    critic-security: <N>
+    critic-angular: <N>
+    critic-shape: <N>
+    critic-performance: <N>
+    critic-tests: <N>
+
 input_profile:
   files_changed: <N>
   diff_lines_added: <N>
@@ -185,10 +235,10 @@ findings_profile:
   by_critic:
     critic-correctness: { raised: <N>, dropped_3a: <N>, survived: <N> }
     critic-security:    { raised: <N>, dropped_3a: <N>, survived: <N> }
-    critic-performance: { raised: <N>, dropped_3a: <N>, survived: <N> }
     critic-angular:     { raised: <N>, dropped_3a: <N>, survived: <N> }
-    critic-tests:       { raised: <N>, dropped_3a: <N>, survived: <N> }
     critic-shape:       { raised: <N>, dropped_3a: <N>, survived: <N> }
+    critic-performance: { raised: <N>, dropped_3a: <N>, survived: <N> }
+    critic-tests:       { raised: <N>, dropped_3a: <N>, survived: <N> }
   orchestrator:
     mental_trace_findings: <N>                 # Stage 2.5
     sweep_findings: <N>                        # Stage 3b
@@ -205,8 +255,8 @@ human_feedback:
 ```
 ````
 
-Tallying rules: `raised` = findings each critic initially returned; `dropped_3a` = those you dropped in 3a; `survived` = `raised - dropped_3a`; add `[sweep]`-prefixed findings into the right critic's `survived` AND into `orchestrator.sweep_findings`; `[mental-trace]` findings go only into `orchestrator.mental_trace_findings` (not a critic). Titles must describe the FINDING, not quote code — "Breaking public API change in <symbol-name-only>" is OK, "`export class Foo { ... }`" is not. `task_context.refs_fetched_via` is observational metadata for calibration (does AC improve review quality?); it does not change severity counts.
+Tallying rules: `raised` = findings each critic initially returned; `dropped_3a` = inline drops during Stage 2 (mini-3a) plus final-3a drops; `survived` = `raised - dropped_3a`; add `[sweep]`-prefixed findings into the right critic's `survived` AND into `orchestrator.sweep_findings`; `[mental-trace]` findings go only into `orchestrator.mental_trace_findings` (not a critic). Titles must describe the FINDING, not quote code — "Breaking public API change in <symbol-name-only>" is OK, "`export class Foo { ... }`" is not. `task_context.refs_fetched_via` is observational metadata for calibration (does AC improve review quality?); it does not change severity counts.
 
 After producing the full report, add this closing line verbatim: **"Сохранить лог для аналитики? Путь по умолчанию: `~/.config/opencode/review-logs/<id>.yaml`. Ответьте `y` для дефолта, укажите свой путь, или `n` чтобы пропустить."** Your write permission is `deny` — the parent (skill or main session) handles the save.
 
-Rules: severity for real problems only, no style bikeshedding; cite as `path/file.ts:42`; empty category → "None found" (no filler); keep mental-trace reasoning visible for calculational findings; under step limits, correctness/interaction outranks style — deliver in stages, never skip them; you do not modify files.
+Rules: severity for real problems only, no style bikeshedding; cite as `path/file.ts:42`; empty category → "None found" (no filler); keep mental-trace reasoning visible for calculational findings; under step limits, correctness/interaction outranks style — deliver in stages, never skip a stage; a critic may be skipped only via the 2.0 gates, never to save budget; you do not modify files.

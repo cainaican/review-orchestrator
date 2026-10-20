@@ -1,6 +1,6 @@
 # review-orchestrator
 
-Staged deep code review for [opencode](https://opencode.ai): one orchestrator subagent + 6 parallel read-only critics (correctness, security, performance, Angular library conventions, tests, shape), plus an orchestrator-run mental-trace pass and a coverage sweep. No harness — seven markdown agent files, nothing else.
+Staged deep code review for [opencode](https://opencode.ai): one orchestrator subagent + 6 read-only critics run sequentially (correctness → security → Angular library conventions → shape → performance → tests) with a verified findings digest passed down the chain, plus an orchestrator-run mental-trace pass and a coverage sweep. No harness — seven markdown agent files, nothing else.
 
 Inspired by the pipeline patterns of [jordan-gibbs/hyperresearch](https://github.com/jordan-gibbs/hyperresearch): critics must cite code; the orchestrator mentally executes calculational functions on adversarial inputs, adversarially verifies critic findings for both existence AND coverage, and iteratively deep-dives on blockers before the report.
 
@@ -57,15 +57,17 @@ The report ends with a `## Review log` YAML block for analytics. Saved to `~/.co
 
 | Agent | Lens | Access |
 |---|---|---|
-| `code-reviewer` | orchestrator: intake → context+domain brief → 6 parallel critics → mental trace → verification + coverage sweep → deep-dive on blockers → report | read-only, `git diff/log/show/branch`, Task only on critics, `mcp__*` tools for external refs |
-| `critic-correctness` | logic bugs, edge cases, races, regressions; mental execution over adversarial inputs | read-only, hidden |
-| `critic-security` | secrets, auth, injection, XSS, SSRF | read-only, hidden |
-| `critic-performance` | N+1, bundle, tree-shaking, change detection; diff-relative, rejects bounded micro-noise without semantic risk | read-only, hidden |
-| `critic-angular` | signals/OnPush, RxJS interaction-stream traps (drag/scroll/pointer), public API surface, semver, templates; diff-relative | read-only, hidden |
-| `critic-tests` | spec vs behavior correspondence, missing edge-case coverage, concrete test cases to add | read-only, hidden |
-| `critic-shape` | overbuild, dead scaffolding, stock-primitive mismatches, library-API shape debt | read-only, hidden |
+| `code-reviewer` | orchestrator: intake → context+domain brief → critic plan (conservative skip gates) → sequential critics with verified findings digest → mental trace → verification + coverage sweep → deep-dive on blockers → report | read-only, `git diff/log/show/branch`, Task only on critics, `mcp__*` tools for external refs |
+| `critic-correctness` | 1st: logic bugs, edge cases, races, regressions; mental execution over adversarial inputs | read-only, hidden |
+| `critic-security` | 2nd: secrets, auth, injection, XSS, SSRF | read-only, hidden |
+| `critic-angular` | 3rd: signals/OnPush, RxJS interaction-stream traps (drag/scroll/pointer), public API surface, semver, templates; diff-relative | read-only, hidden |
+| `critic-shape` | 4th: overbuild, dead scaffolding, stock-primitive mismatches, library-API shape debt | read-only, hidden |
+| `critic-performance` | 5th: N+1, bundle, tree-shaking, change detection; diff-relative, rejects bounded micro-noise without semantic risk | read-only, hidden |
+| `critic-tests` | 6th: spec vs behavior correspondence, missing edge-case coverage, concrete test cases to add (harvests the digest into regression templates) | read-only, hidden |
 
-Anti-hallucination contract: critics may only report findings with a verbatim code excerpt; the orchestrator re-opens every blocker/important file itself (proof-of-existence) AND sweeps every changed file with no findings (proof-of-coverage) before the report.
+Anti-hallucination contract: critics may only report findings with a verbatim code excerpt; the orchestrator verifies every blocker/important itself inline — before the finding may travel further down the chain (proof-of-existence) — and sweeps every changed file with no findings (proof-of-coverage) before the report.
+
+Sequential critic chain: critics run in a fixed order (correctness → security → Angular → shape → performance → tests), not in parallel. After each critic returns, the orchestrator verifies its blocker/important findings against the code and passes a compact **findings digest** (titles only, ~4 KB cap) to the next critic — verified context, not an agenda: later critics must not re-report digest items, confirm them without their own excerpt, or let the digest narrow their sweep. Conservative skip gates may skip a critic whose lens has no surface in the diff (e.g. no input/network hunks → security skipped); every skip is logged with its reason in the review log. The tests critic runs last and converts every surviving finding into regression-test templates.
 
 Interaction-impact gate: the orchestrator classifies every changed mechanism by intervention class; delivery-level changes — anything altering event delivery or timing — get a mandatory **victims list** of the existing interactions they intersect, consumer side included. Critics answer "what does this diff BREAK?" explicitly, and the report's "Interaction impact" section forbids unverified negatives. Public-API diffing alone does not cover delivery-level coupling: "no callers changed" is not evidence that behavior survived.
 

@@ -46,6 +46,16 @@ Plus a final section:
 
 3–8 templates per significantly changed function. Concrete suggestions the user can paste.
 
+# Prior findings (sequential mode)
+
+Critics run in a fixed chain (correctness → security → angular → shape → performance → tests); you run LAST and your prompt carries a **findings digest** — verified findings from all critics before you. Rules:
+
+- The digest is verified context, NOT an agenda — your lens stays your own and still sweeps every in-scope changed file (only regions under `Scope notes` marked verified-dead are excluded).
+- Do NOT re-report a finding the digest already covers — spend your budget where your lens adds new signal.
+- Do NOT confirm a digest finding without your own verbatim excerpt; you MAY contradict it with evidence.
+- Severity definitions stay yours — never upgrade because a prior critic used a stronger word.
+- Harvest: every digest finding is a regression-test candidate — add an `it(...)` template under "Test cases to add" that pins the CORRECT (post-fix) behavior the finding describes, not the bug.
+
 # Rules
 
 - Every finding cites a verbatim excerpt from spec or source. No excerpt, no finding.

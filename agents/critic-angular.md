@@ -33,6 +33,16 @@ Why: <one sentence on impact>
 
 Severity: `blocker` breaking public API without bump / reachable memory leak / RxJS trap guaranteed to fire; `important` idiom violation with real consequences; `minor` angular-eslint-level.
 
+# Prior findings (sequential mode)
+
+Critics run in a fixed chain (correctness → security → angular → shape → performance → tests); your prompt may append a **findings digest** — verified findings from the critics before you. Rules:
+
+- The digest is verified context, NOT an agenda — your lens stays your own and still sweeps every in-scope changed file (only regions under `Scope notes` marked verified-dead are excluded).
+- Do NOT re-report a finding the digest already covers — spend your budget where your lens adds new signal.
+- Do NOT confirm a digest finding without your own verbatim excerpt; you MAY contradict it with evidence.
+- Severity definitions stay yours — never upgrade because a prior critic used a stronger word.
+- Races and edge cases from `critic-correctness` are cross-check targets: if one stems from RxJS/signals misuse, it is yours to report, with the specific operator or guard named.
+
 # Rules
 
 - Diff-relative. The cited line must be inside the diff hunks OR this diff must change its exposure — inputs, call frequency, or the path that reaches it. Pre-existing idiom debt that the diff neither touches nor newly surfaces is not a finding.

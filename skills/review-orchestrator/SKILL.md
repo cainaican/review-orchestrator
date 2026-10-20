@@ -1,6 +1,6 @@
 ---
 name: review-orchestrator
-description: Deep staged code review of a diff or branch comparison with 6 parallel read-only critics (correctness, security, performance, Angular, tests, shape), orchestrator-run mental trace, and coverage sweep. Use when the user asks to review code, a PR, or a branch diff ("ревью", "review", "посмотри дифф"). On first use installs the code-reviewer and critic agents into .opencode/agents/, then asks which branches to compare and what the task was.
+description: Deep staged code review of a diff or branch comparison with a sequential critic pipeline — correctness → security → Angular → shape → performance → tests — where each critic receives the verified findings digest of the critics before it; orchestrator-run mental trace and coverage sweep on top. Use when the user asks to review code, a PR, or a branch diff ("ревью", "review", "посмотри дифф"). On first use installs the code-reviewer and critic agents into .opencode/agents/, then asks which branches to compare and what the task was.
 ---
 
 # Review Orchestrator
@@ -21,7 +21,7 @@ Look project-first, then global:
 
 Verify completeness every time, not presence — a partial install silently collapses the review to one lens. Missing bundled `agents/` means a broken install; say so and run inline rather than skip lenses.
 
-After install, tell the user: agents installed, loaded at session start. Recommend a new session so the Task tool sees them. If they continue in-session, run the pipeline inline by following `agents/code-reviewer.md` as a procedure — losing parallelism, keeping every stage and every critic lens.
+After install, tell the user: agents installed, loaded at session start. Recommend a new session so the Task tool sees them. If they continue in-session, run the pipeline inline by following `agents/code-reviewer.md` as a procedure — the pipeline is sequential anyway, so the order, the digest chain, every stage and every critic lens stay identical.
 
 ## Step 2 — Gather inputs
 

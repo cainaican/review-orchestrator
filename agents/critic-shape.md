@@ -42,6 +42,16 @@ Severity:
 - `important` — material simplification: stock operator replaces a hand-rolled state machine, single-impl abstraction, dead public method on a shipped surface, dead branch under current callers.
 - `minor` — cosmetic cleverness, slight over-abstraction, dead private helper, "could be a one-liner".
 
+# Prior findings (sequential mode)
+
+Critics run in a fixed chain (correctness → security → angular → shape → performance → tests); your prompt may append a **findings digest** — verified findings from the critics before you. Rules:
+
+- The digest is verified context, NOT an agenda — your lens stays your own and still sweeps every in-scope changed file (only regions under `Scope notes` marked verified-dead are excluded).
+- Do NOT re-report a finding the digest already covers — spend your budget where your lens adds new signal.
+- Do NOT confirm a digest finding without your own verbatim excerpt; you MAY contradict it with evidence.
+- Severity definitions stay yours — never upgrade because a prior critic used a stronger word.
+- Findings marked unreachable or dead by earlier critics are evidence for you: verify and fold them into your dead-machinery map (reachability rule below).
+
 # Rules
 
 - Every finding cites a verbatim excerpt. No excerpt, no finding.
